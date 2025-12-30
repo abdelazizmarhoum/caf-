@@ -1,0 +1,33 @@
+{
+  _id: ObjectId,
+  name: String, 
+  description: String, 
+  price: Number, 
+  
+  category: {
+    type: String,
+    enum: [
+      'salades',
+      'pates',
+      'pizza',
+      'sandwichs',
+      'paninis',
+      'burgers',
+      'brochettes',
+      'marocains',
+      'supplements'
+    ],
+    required: true
+  },  
+
+  availableDays: [Number], 
+  isAvailable: { type: Boolean, default: true },
+  
+  imageUrl: String, 
+  
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: Date,
+  
+  isActive: { type: Boolean, default: true },
+  deletedAt: Date,
+}

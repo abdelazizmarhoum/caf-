@@ -1,0 +1,77 @@
+# Project Implementation Plan: Café Ordering System
+
+## Phase 1: Project Setup & Core Backend
+**Goal**: Establish the technical foundation and basic data structures.
+- [ ] **Project Initialization**:
+    - [ ] Setup Monorepo structure (client/server).
+    - [ ] Initialize Git repository.
+- [ ] **Backend Setup (Node.js/Express)**:
+    - [ ] Configure Environment variables (.env).
+    - [ ] Setup Database connection (MongoDB).
+    - [ ] **Database Schemas**:
+        - [ ] `User` (Kitchen Staff, Manager).
+        - [ ] `MenuItem` (Name, Price, Category, Time availability).
+        - [ ] `Table` (QR Code, Status).
+        - [ ] `Order` (Items, Status, Timestamp).
+- [ ] **Frontend Setup (React/Vite)**:
+    - [ ] Install dependencies (TailwindCSS, React Router, Axios).
+    - [ ] Configure global styles (CSS Variables/Tailwind config).
+
+## Phase 2: Authentication & Menu Management
+**Goal**: Allow managers to set up the café and staff to log in.
+- [ ] **Authentication & Authorization**:
+    - [ ] Implement JWT middleware.
+    - [ ] Login endpoint for Kitchen Staff & Manager.
+- [ ] **Manager Dashboard (Backend + Frontend)**:
+    - [ ] **Menu Management**: CRUD for adding/editing food & drinks.
+    - [ ] **Staff Management**: Create accounts for kitchen staff.
+    - [ ] **Table Management**: Generate QR links for tables.
+
+## Phase 3: Customer Ordering Flow
+**Goal**: Enable customers to scan, browse, and order.
+- [ ] **Public Interface**:
+    - [ ] Route `/table/:tableId` with validation (check if table exists).
+    - [ ] "Confirm Table" screen.
+- [ ] **Menu Display**:
+    - [ ] Filter menu by current time (Breakfast/Lunch/Dinner).
+    - [ ] Display categories (Drinks, Food, Dessert).
+- [ ] **Cart & Ordering**:
+    - [ ] Add to cart functionality.
+    - [ ] Checkout process (Place Order API).
+    - [ ] "Order Placed" confirmation screen.
+
+## Phase 4: Real-Time Communication & Kitchen Dashboard
+**Goal**: Connect the customer to the kitchen instantly.
+- [ ] **WebSocket Integration (Socket.io)**:
+    - [ ] Setup WebSocket server.
+    - [ ] Events: `new_order`, `order_status_update`, `call_waiter`.
+- [ ] **Kitchen Dashboard**:
+    - [ ] Live feed of "Pending" orders.
+    - [ ] Actions: "Start Preparation" (updates status to Preparing).
+    - [ ] Actions: "Ready" (updates status to Ready).
+    - [ ] **Stock Management**: Quick toggle to mark items as "Out of Stock".
+
+## Phase 5: Customer Waiting Experience
+**Goal**: Keep customers engaged while they wait.
+- [ ] **Order Status Tracker**:
+    - [ ] Live updates (Pending -> Preparing -> Ready).
+- [ ] **Entertainment**:
+    - [ ] Implement Memory Card Game (Simple JS game).
+- [ ] **Completion**:
+    - [ ] Notification when order is ready.
+    - [ ] Unlock table for next customer after completion.
+
+## Phase 6: Analytics & Reporting (Manager)
+**Goal**: Provide business insights.
+- [ ] **Reports Dashboard**:
+    - [ ] Daily/Monthly sales charts.
+    - [ ] Top-selling items.
+    - [ ] Staff performance metrics (avg prep time).
+
+## Phase 7: Polish & Deployment
+**Goal**: Finalize for production.
+- [ ] **Localization**: Ensure all text is in French.
+- [ ] **Security Audit**: API rate limiting, Input validation.
+- [ ] **Deployment**:
+    - [ ] Backend (e.g., Render/Railway).
+    - [ ] Frontend (e.g., Vercel/Netlify).

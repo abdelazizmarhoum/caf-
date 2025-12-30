@@ -1,0 +1,553 @@
+# **Café Ordering System - Complete Project Documentation**
+
+## **Project Overview**
+A modern, efficient café ordering system that replaces traditional paper-based ordering with a digital, real-time solution. The system consists of three interconnected interfaces: **Customer Mobile Interface**, **Kitchen Staff Dashboard**, and **Manager Administration Panel**. Customers scan QR codes at their tables to order, kitchen staff receive and prepare orders in real-time, and managers have complete control over the system.
+
+---
+
+## **System Architecture**
+
+### **1. Technology Stack**
+- **Backend**: Node.js + Express + Socket.io
+- **Database**: MongoDB with Mongoose ODM
+- **Frontend**: React.js + Tailwind CSS
+- **Authentication**: JWT + Bcrypt
+- **Hosting**: Separate backend/frontend deployment
+- **Languages**: French interface, Arabic support if needed
+
+### **2. Core Components**
+```
+┌─────────────────────────────────────────────────┐
+│               THREE-TIER SYSTEM                  │
+├─────────────────┬───────────────┬───────────────┤
+│  CUSTOMER       │   KITCHEN     │   MANAGER     │
+│  INTERFACE      │   DASHBOARD   │   DASHBOARD   │
+└─────────────────┴───────────────┴───────────────┘
+         │                 │               │
+         ▼                 ▼               ▼
+┌─────────────────────────────────────────────────┐
+│           CENTRAL BACKEND SERVER                │
+│        (REST API + WebSocket Server)            │
+└─────────────────────────────────────────────────┘
+                         │
+                         ▼
+            ┌─────────────────────┐
+            │    MONGODB DATABASE │
+            └─────────────────────┘
+```
+
+---
+
+## **Detailed Workflow**
+
+### **PART 1: CUSTOMER ORDERING JOURNEY**
+
+#### **Step 1: Table Arrival & QR Scanning**
+1. Customer sits at a table (e.g., Table 5)
+2. Scans the **unique QR code** on the table
+3. Redirected to: `https://cafe-domain.com/table/5`
+4. **Table Confirmation Screen** appears:
+   ```
+   "Vous êtes à la Table 5 ?"
+   [Oui, c'est ma table] [Non]
+   ```
+5. System checks if Table 5 has active order
+   - **If YES**: "Cette table a déjà une commande en cours. Veuillez attendre qu'elle soit terminée."
+   - **If NO**: Proceed to menu
+
+#### **Step 2: Menu Browsing & Selection**
+1. **Time-based Menu Filtering**:
+   - Breakfast (6h-11h): Petit-déjeuner items only
+   - Lunch (11h-16h): Déjeuner items only
+   - Dinner (16h-23h): Dîner items only
+   - Display: Name, Description, Price (DH), Image
+
+2. **Real-time Availability**:
+   - Items marked "unavailable" by kitchen are grayed out
+   - Automatic updates via WebSocket
+
+3. **Shopping Cart**:
+   - Add/remove items
+   - Quantity adjustment
+   - Special instructions field per item
+   - Total calculation in DH
+
+#### **Step 3: Order Confirmation**
+1. Review order summary
+2. Click "Confirmer la commande"
+3. **System actions**:
+   - Locks table (cannot order again until current order complete)
+   - Sends order to kitchen dashboard
+   - Plays notification sound in kitchen
+   - Redirects customer to waiting page
+
+#### **Step 4: Waiting Experience**
+1. **Order Status Tracker**:
+   ```
+   ÉTAT DE VOTRE COMMANDE:
+   ⏳ En attente    →   🔵 En préparation   →   ✅ Prête
+   ```
+   - Real-time updates without page refresh
+
+2. **Memory Card Game**:
+   - Café-themed cards (café, croissant, thé, etc.)
+   - Simple matching game
+   - Continues even after order ready
+   - No scoring/saving, pure distraction
+
+3. **Real-time Notifications**:
+   - "Votre commande est en préparation" (when kitchen starts)
+   - "Votre commande est prête !" (when kitchen marks ready)
+
+#### **Step 5: Order Completion**
+1. When kitchen marks order "Ready":
+   - Customer sees notification
+   - Table lock is released after 5 minutes
+   - Option to place new order appears
+   - Payment happens separately at counter
+
+---
+
+### **PART 2: KITCHEN STAFF WORKFLOW**
+
+#### **Login & Authentication**
+- Single kitchen staff per shift
+- Login: Email + Password
+- Session: JWT token valid for shift duration
+- Auto-logout after 8 hours or manual logout
+
+#### **Dashboard Interface**
+```
+┌─────────────────────────────────────────────────┐
+│  CAFÉ KITCHEN - [Nom du Staff]                  │
+│  [Déconnexion]      [Gérer Disponibilité]       │
+├─────────────────────────────────────────────────┤
+│  COMMANDES EN COURS                             │
+├─────┬─────────┬─────────────────┬───────┬───────┤
+│ Table│ Commande │ Temps         │ État  │ Action│
+├─────┼─────────┼─────────────────┼───────┼───────┤
+│  5  │ 2 Café + │ 5 min          │⏳Attente│[Démarrer]│
+│     │ 1 Croiss.│                 │       │       │
+├─────┼─────────┼─────────────────┼───────┼───────┤
+│  3  │ 1 Thé +  │ 12 min         │🔵Prépar│[Terminer]│
+│     │ 2 Cookies│                 │       │       │
+└─────┴─────────┴─────────────────┴───────┴───────┘
+```
+
+#### **Stock Management**
+- **"Gérer Disponibilité"** button at top
+- Modal with all menu items
+- Toggle switch for each item
+- Real-time propagation to customer menus
+- Reasons: Rupture de stock, Machine en panne, etc.
+
+#### **Order Processing**
+1. **New Order Arrives**:
+   - Audio notification: "Nouvelle commande !"
+   - Visual highlight in table
+   - Auto-appears in "Commandes en attente"
+
+2. **Start Order**:
+   - Click "Démarrer" on order
+   - Status changes: ⏳ → 🔵
+   - Timer starts for preparation tracking
+   - Customer notified
+
+3. **Mark Order Ready**:
+   - Click "Terminer" when order complete
+   - Status changes: 🔵 → ✅
+   - Timer stops
+   - Customer notified
+   - Order moves to "Historique" section
+
+#### **Shift Management**
+- Previous staff must logout
+- New staff logs in with own credentials
+- Orders are tied to staff who prepared them
+- Performance tracking for manager review
+
+---
+
+### **PART 3: MANAGER ADMINISTRATION**
+
+#### **Manager Authentication**
+- Separate login with elevated privileges
+- Multi-factor authentication option
+- Session management
+
+#### **Dashboard Sections**
+
+##### **1. Gestion du Personnel**
+```
+┌─────────────────────────────────────────────────┐
+│  CRÉER UN NOUVEAU STAFF                         │
+├─────────────────────────────────────────────────┤
+│  LISTE DU PERSONNEL                             │
+├─────┬──────────────┬─────────────┬──────────────┤
+│ Nom │ Email        │ Dernière    │ Actions      │
+├─────┼──────────────┼─────────────┼──────────────┤
+│ Karim│k@cafe.com   │ 2024-01-15  │ [Edit][Delete]│
+└─────┴──────────────┴─────────────┴──────────────┘
+```
+- Create new kitchen staff accounts
+- Edit existing accounts
+- Deactivate/reactivate accounts
+- Password reset functionality
+
+##### **2. Gestion du Menu**
+```
+┌─────────────────────────────────────────────────┐
+│  AJOUTER UN PRODUIT                             │
+│  Nom: ________ Catégorie: [☕Boisson][🥐Nourriture]│
+│  Description: _________                         │
+│  Prix: __.__ DH  Image: [Upload]                │
+│  Disponible: 6h-11h ☐ 11h-16h ☐ 16h-23h ☐      │
+│  [Enregistrer]                                  │
+├─────────────────────────────────────────────────┤
+│  MENU COMPLET                                    │
+└─────────────────────────────────────────────────┘
+```
+- Full CRUD operations for menu items
+- Time scheduling for each item
+- Bulk operations (import/export)
+- Image management
+
+##### **3. Historique des Commandes**
+- Filter by: Date range, Table, Staff, Product
+- Search functionality
+- Export to CSV/PDF
+- Each record shows:
+  - Table number
+  - Order items with quantities
+  - Staff who prepared it
+  - Timestamps (ordered, started, completed)
+  - Total amount
+
+##### **4. Rapports & Analytics**
+```
+┌─────────────────────────────────────────────────┐
+│  RAPPORTS MENSUELS - Janvier 2024               │
+├─────────────────────────────────────────────────┤
+│  📊 TOP 5 PRODUITS:                             │
+│  1. Café (245 commandes)                        │
+│  2. Croissant (198)                             │
+│  3. Thé (156)                                   │
+├─────────────────────────────────────────────────┤
+│  👨‍🍳 PERFORMANCE STAFF:                         │
+│  Karim: 45 commandes, Moyenne: 8.2 min          │
+│  Fatima: 38 commandes, Moyenne: 7.5 min         │
+├─────────────────────────────────────────────────┤
+│  🕐 HEURES DE POINTE:                           │
+│  8h-9h: 35 commandes                            │
+│  12h-13h: 42 commandes                          │
+└─────────────────────────────────────────────────┘
+```
+
+**Report Types:**
+- Most ordered items (daily/weekly/monthly)
+- Staff performance metrics
+- Table utilization
+- Peak hour analysis
+- Revenue reports (DH)
+- Customer wait time analysis
+
+#### **Data Management**
+- **Soft Delete System**: All deletions are reversible
+- **Data Retention**: Indefinite storage
+- **Backup System**: Daily automatic backups
+- **Audit Log**: All manager actions logged
+
+---
+
+## **Technical Specifications**
+
+### **Database Schema**
+
+#### **Users Collection**
+```javascript
+{
+  _id: ObjectId,
+  email: {type: String, unique: true, required: true},
+  passwordHash: {type: String, required: true},
+  role: {type: String, enum: ['kitchen', 'manager'], required: true},
+  fullName: {type: String, required: true},
+  isActive: {type: Boolean, default: true},
+  createdAt: {type: Date, default: Date.now},
+  lastLogin: Date,
+  deletedAt: Date // for soft delete
+}
+```
+
+#### **MenuItems Collection**
+```javascript
+{
+  _id: ObjectId,
+  name: {type: String, required: true},
+  description: String,
+  price: {type: Number, required: true}, // in DH
+  category: {type: String, enum: ['drink', 'food', 'dessert']},
+  imageUrl: String,
+  availableFrom: {type: Number, min: 0, max: 23}, // hour
+  availableTo: {type: Number, min: 0, max: 23},   // hour
+  isAvailable: {type: Boolean, default: true}, // kitchen toggle
+  isActive: {type: Boolean, default: true}, // manager toggle
+  createdAt: {type: Date, default: Date.now},
+  deletedAt: Date
+}
+```
+
+#### **Tables Collection**
+```javascript
+{
+  _id: ObjectId,
+  tableNumber: {type: Number, unique: true, required: true},
+  qrCodeUrl: {type: String, required: true}, // "/table/5"
+  currentOrderId: {type: ObjectId, ref: 'Order'},
+  isAvailable: {type: Boolean, default: true},
+  lastOrderCompletedAt: Date,
+  createdAt: {type: Date, default: Date.now}
+}
+```
+
+#### **Orders Collection**
+```javascript
+{
+  _id: ObjectId,
+  tableId: {type: ObjectId, ref: 'Table', required: true},
+  tableNumber: {type: Number, required: true}, // denormalized for speed
+  items: [{
+    menuItemId: {type: ObjectId, ref: 'MenuItem'},
+    name: {type: String, required: true},
+    quantity: {type: Number, required: true, min: 1},
+    price: {type: Number, required: true}, // price at time of order
+    specialInstructions: String
+  }],
+  totalAmount: {type: Number, required: true},
+  status: {
+    type: String,
+    enum: ['pending', 'preparing', 'ready'],
+    default: 'pending'
+  },
+  customerNotes: String,
+  kitchenStaffId: {type: ObjectId, ref: 'User'},
+  startedAt: Date, // when kitchen clicked "Start"
+  readyAt: Date,   // when kitchen clicked "Ready"
+  createdAt: {type: Date, default: Date.now, index: true},
+  deletedAt: Date
+}
+```
+
+### **API Endpoints**
+
+#### **Public Routes**
+- `GET /table/:number` - Table confirmation page
+- `GET /api/menu` - Get available menu items
+- `POST /api/order` - Place new order
+- `GET /api/order/:id/status` - Check order status
+- `WS /socket.io` - WebSocket connection
+
+#### **Kitchen Routes (Authenticated)**
+- `POST /api/auth/kitchen/login`
+- `POST /api/auth/kitchen/logout`
+- `GET /api/kitchen/orders` - Get pending orders
+- `PATCH /api/kitchen/orders/:id/start`
+- `PATCH /api/kitchen/orders/:id/ready`
+- `PATCH /api/kitchen/menu/:id/availability`
+
+#### **Manager Routes (Authenticated)**
+- `POST /api/auth/manager/login`
+- **User Management**:
+  - `GET /api/manager/users`
+  - `POST /api/manager/users`
+  - `PUT /api/manager/users/:id`
+  - `DELETE /api/manager/users/:id`
+- **Menu Management**:
+  - Full CRUD for menu items
+- **Reports**:
+  - `GET /api/manager/reports/sales?period=...`
+  - `GET /api/manager/reports/top-items`
+  - `GET /api/manager/reports/staff-performance`
+
+### **Real-time Events (WebSocket)**
+
+#### **Server → Client**
+```javascript
+socket.emit('new_order', orderData); // to kitchen
+socket.emit('order_started', {orderId, tableNumber}); // to customer
+socket.emit('order_ready', {orderId, tableNumber}); // to customer
+socket.emit('menu_updated', {itemId, isAvailable}); // to all customers
+socket.emit('table_status', {tableNumber, isAvailable}); // to all
+```
+
+#### **Client → Server**
+```javascript
+socket.emit('place_order', orderData); // from customer
+socket.emit('start_order', {orderId, staffId}); // from kitchen
+socket.emit('complete_order', {orderId, staffId}); // from kitchen
+socket.emit('update_availability', updates); // from kitchen
+```
+
+---
+
+## **Security Measures**
+
+1. **Table Security**:
+   - QR codes encode table numbers only
+   - Session validation on each request
+   - Table confirmation step
+   - One active order per table enforcement
+
+2. **Authentication**:
+   - JWT tokens with expiration
+   - Password hashing with bcrypt
+   - Role-based access control
+   - Session timeout for kitchen staff
+
+3. **Data Security**:
+   - Input validation on all endpoints
+   - No customer PII storage
+   - HTTPS enforcement
+   - Regular security audits
+
+4. **Operational Security**:
+   - Kitchen staff must logout between shifts
+   - Manager approval for critical operations
+   - Audit logs for all admin actions
+   - Automatic backup system
+
+---
+
+## **Deployment & Maintenance**
+
+### **Hardware Requirements**
+1. **Customer**: Any smartphone with camera
+2. **Kitchen**: Tablet (Android/iOS) mounted in kitchen
+3. **Manager**: Laptop/desktop for administration
+4. **Server**: Cloud hosting (AWS/DigitalOcean/Heroku)
+5. **Network**: Reliable WiFi with captive portal
+
+### **Software Requirements**
+1. **Backend Server**: Node.js v18+
+2. **Database**: MongoDB v6+
+3. **Frontend**: Modern browser support
+4. **SSL Certificate**: For HTTPS
+
+### **Maintenance Tasks**
+- **Daily**: Backup verification, log monitoring
+- **Weekly**: Performance optimization, cleanup
+- **Monthly**: Security updates, report generation
+- **As needed**: Menu updates, staff account management
+
+### **Training Required**
+1. **Kitchen Staff** (30 minutes):
+   - Login/logout procedure
+   - Order processing workflow
+   - Stock availability management
+   - Troubleshooting basics
+
+2. **Manager** (2 hours):
+   - Full system administration
+   - Report generation and interpretation
+   - User and menu management
+   - System monitoring
+
+---
+
+## **Success Metrics**
+
+1. **Operational Efficiency**:
+   - Order processing time reduced by 40%
+   - Table turnover increased by 25%
+   - Order accuracy improved to 99%
+
+2. **Customer Experience**:
+   - Average wait time reduced by 30%
+   - Customer satisfaction scores improved
+   - Repeat ordering increased
+
+3. **Business Impact**:
+   - Reduced paper/printing costs
+   - Better inventory management
+   - Data-driven decision making
+   - Staff performance optimization
+
+---
+
+## **Future Expansion Possibilities**
+
+1. **Phase 2 Features**:
+   - Loyalty program integration
+   - Online payment gateway
+   - Customer feedback system
+   - Advanced analytics dashboard
+
+2. **Phase 3 Features**:
+   - Mobile app development
+   - Reservation system
+   - Inventory management
+   - Supplier integration
+
+3. **Multi-location Support**:
+   - Franchise management
+   - Centralized reporting
+   - Menu synchronization
+   - Cross-location analytics
+
+---
+
+## **Project Timeline**
+
+### **Development Phases**
+**Phase 1 (Weeks 1-3)**: Core System
+- Database design & API development
+- Basic ordering flow
+- Kitchen dashboard foundation
+
+**Phase 2 (Weeks 4-5)**: Real-time Features
+- WebSocket integration
+- Status tracking
+- Notifications system
+
+**Phase 3 (Weeks 6-7)**: Management System
+- Manager dashboard
+- Reporting engine
+- User management
+
+**Phase 4 (Weeks 8-9)**: Polish & Testing
+- French localization
+- Memory game
+- Security hardening
+- User testing
+
+**Phase 5 (Week 10)**: Deployment & Training
+- Server setup
+- Staff training
+- Go-live support
+
+---
+
+## **Budget Considerations**
+
+1. **Development Costs**: Based on scope
+2. **Hardware**: Tablet(s) for kitchen
+3. **Hosting**: Cloud server costs (~$50-100/month)
+4. **Domain & SSL**: ~$50/year
+5. **Maintenance**: Optional retainer for updates
+
+---
+
+## **Risks & Mitigation**
+
+1. **Internet Downtime**: Local caching, graceful degradation
+2. **Staff Resistance**: Training, incentives, gradual rollout
+3. **Technical Issues**: 24/7 support availability for first month
+4. **Customer Adoption**: Clear instructions, staff assistance
+5. **Security Breaches**: Regular audits, penetration testing
+
+---
+
+## **Conclusion**
+
+This comprehensive café ordering system transforms traditional ordering into a seamless digital experience. By leveraging QR codes, real-time updates, and intuitive interfaces, it enhances operational efficiency, improves customer satisfaction, and provides valuable business insights through comprehensive reporting.
+
+The system is designed specifically for your café's workflow, with French language support, DH currency formatting, and consideration for local operational practices. With its modular architecture, the system can scale from a single café to multiple locations while maintaining simplicity and reliability.
