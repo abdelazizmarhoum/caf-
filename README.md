@@ -97,7 +97,7 @@ node seeder.js
 ### Lancer le Backend (Développement)
 ```bash
 cd backend
-npm run dev
+node server.js
 ```
 
 ### Lancer le Frontend (Développement)
